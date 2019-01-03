@@ -227,8 +227,6 @@ Vue.component(SwipeItem.name, SwipeItem)
 		  <mt-swipe-item>1</mt-swipe-item>
 		  <mt-swipe-item>2</mt-swipe-item>
 		  <mt-swipe-item>3</mt-swipe-item>
-		  <mt-swipe-item>4</mt-swipe-item>
-		  <mt-swipe-item>5</mt-swipe-item>
 		</mt-swipe>
 	</div>
 </template>
@@ -245,12 +243,6 @@ Vue.component(SwipeItem.name, SwipeItem)
 			}
 			&:nth-child(3) {
 				background-color: blue;
-			}
-			&:nth-child(4) {
-				background-color: cyan;
-			}
-			&:nth-child(5) {
-				background-color: pink;
 			}	
 		}
 	}
@@ -317,14 +309,10 @@ export default {
 		  <mt-swipe-item v-for="item in bannerList" :key="item.url">
 		  	<img :src="item.img" alt="">
 		  </mt-swipe-item>
-		  <mt-swipe-item>2</mt-swipe-item>
-		  <mt-swipe-item>3</mt-swipe-item>
-		  <mt-swipe-item>4</mt-swipe-item>
-		  <mt-swipe-item>5</mt-swipe-item>
 </mt-swipe>
 ```
 
-#### TODO:
+#### TODO1:
 
 这里原项目老师给的接口不能用了，需要处理，考虑到只关系到到轮播图数据，并不会影响后面具体功能，暂未处理
 
@@ -418,20 +406,528 @@ export default {
 
 这样代码过渡自然点
 
+### TODO1中的接口问题
+
+今天看到该项目的原作者发布的将接口都改为`http://www.liulongbin.top:3005`的通知，果断把我的接口给改了下，这下就能正常接收接口中轮播图数据了。
+
+### 新闻资讯
+
+在`HomeContainer.vue`中有六个方格的模块，改造一个，其他套路基本一样
+
+#### router-link 改造
+
+```html
+<router-link  to="/home/newslink" class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3"><a href="#">
+	   <img src="../../images/menu1(1).png" alt="">
+	   <div class="mui-media-body">新闻资讯</div></a>
+</router-link>
+```
+
+#### newsList文件
+
+创建新的文件`components/news/newsList.vue`
+
+```javascript
+<template>
+	<div>
+		<h3>新闻列表页面</h3>
+	</div>
+</template>
+
+<script></script>
+
+<style lang="scss" scoped>
+	
+</style>
+```
+
+在`router.js`中，导入和添加路由
+
+```javascript
+import NewsList from './components/news/newsList.vue'
+// 在路由规则routes中添加该规则
+{ path: '/home/newslist', component: NewsList }
+```
+
+这样就可以正常访问了，基本和配置`tabbar`下面的几个路由组件一样的套路
+
+#### 绘制`newsList.vue`页面
+
+使用`MUI`下的组件`mui-master\examples\hello-mui\examples\media-list.html`
+
+中的这一段代码
+
+```html
+<ul class="mui-table-view">
+	<li class="mui-table-view-cell mui-media">
+		<a href="javascript:;">
+			<img class="mui-media-object mui-pull-left" src="../images/shuijiao.jpg">
+			<div class="mui-media-body">
+				幸福
+				<p class='mui-ellipsis'>能和心爱的人一起睡觉，是件幸福的事情；可是，打呼噜怎么办？</p>
+			</div>
+		</a>
+	</li>
+	<li class="mui-table-view-cell mui-media">
+		<a href="javascript:;">
+			<img class="mui-media-object mui-pull-left" src="../images/muwu.jpg">
+			<div class="mui-media-body">
+				木屋
+				<p class='mui-ellipsis'>想要这样一间小木屋，夏天挫冰吃瓜，冬天围炉取暖.</p>
+			</div>
+		</a>
+	</li>
+	<li class="mui-table-view-cell mui-media">
+		<a href="javascript:;">
+			<img class="mui-media-object mui-pull-left" src="../images/cbd.jpg">
+			<div class="mui-media-body">
+				CBD
+				<p class='mui-ellipsis'>烤炉模式的城，到黄昏，如同打翻的调色盘一般.</p>
+			</div>
+		</a>
+	</li>
+</ul>
+```
+
+然后改造
+
+- 图片地址改造下，不然报错
+- template 中 HTMl 代码修改如下
+
+```javascript
+<li class="mui-table-view-cell mui-media">
+				<a href="javascript:;">
+					<img class="mui-media-object mui-pull-left" src="../../images/author.jpg">
+					<div class="mui-media-body">
+						<h1>木屋</h1>
+						<p class='mui-ellipsis'>想要这样一间小木屋，夏天挫冰吃瓜，冬天围炉取暖.</p>
+						<p class="mui-ellipsis">
+							<span>发表时间: 2018-10-10 10:10:10</span>
+							<span>点击: 0 次</span>
+						</p>
+					</div>
+				</a>
+			</li>
+```
+
+- 添加一些对应的`style`样式
+
+```scss
+<style lang="scss" scoped>
+	.mui-table-view {
+		li {
+			h1 {
+				font-size: 14px;
+			}
+			.mui-ellipsis {
+				font-size: 12px;
+				color: #226aff;
+				display: flex;
+				<!-- css3 属性，两边对齐 -->
+				justify-content: space-between;
+			}
+		}
+		
+	}
+</style>
+```
+
+#### 新闻资讯数据
+
+和渲染轮播图数据方法差不多
+
+##### 配置全局根路径
+
+**由于每请求一次接口中的数据都要使用到根路径**，所以将根路径配置起来
+
+注意：要放到注册了`vue-resource`之后, 即`Vue.use(VueResource)`之后
+
+```javascript
+// 配置全局根路径
+Vue.http.options.root = 'http://www.liulongbin.top:3005'
+```
+
+这样的话，以前接口的地方就需要更改，去掉根路径的这一段即可
+
+##### 请求数据并保存
+
+在`newsList.vue`组件中的`script`标签中导出数据和对应方法，这里主要配置了一个方法和保存之后的数据
+
+```javascript
+	import { Toast } from 'mint-ui'
+
+	export default {
+		data() {
+			return {
+				newslist: []
+			}
+		},
+		created() {
+			this.getNewsList()
+		},
+		methods: {
+			getNewsList() {
+				this.$http.get('api/getnewslist').then(result => {
+					if (result.body.status === 0) {
+						// 如果没有失败，应该把数据保存到data上
+						this.newslist = result.body.message
+					} else {
+						Toast('获取新闻列表失败')
+					}
+				})
+			}
+		}
+	}
+```
 
+##### 渲染数据
 
+将数据去`ul`标签中遍历出来，遍历到每一个`li`中
 
+```html
+<ul class="mui-table-view">
+			<li class="mui-table-view-cell mui-media" v-for="item in newslist" :key="item.id">
+				<a href="javascript:;">
+					<img class="mui-media-object mui-pull-left" :src="item.img_url">
+					<div class="mui-media-body">
+						<h1>{{ item.title }}</h1>
+						<p class='mui-ellipsis'>{{ item.zhaiyao }}</p>
+						<p class="mui-ellipsis">
+							<span>发表时间: {{ item.add_time }}</span>
+							<span>点击: {{ item.click }} 次</span>
+						</p>
+					</div>
+				</a>
+			</li>
+		</ul>
+```
 
+#### 小bug
 
+##### 最底部无法完全显示
 
+`App.vue`中给`.app-container`容器添加`padding-bottom: 50px;`
+
+##### 时间格式
 
+加一个全局过滤器
+
+**可以用moment模块去做时间格式化处理**
+
+```javascript
+// 去项目根目录安装moment模块
+npm i moment -S
+```
+
+**导入模块和定义过滤器**
+
+`main.js`
+
+```javascript
+// 3.1 导入时间插件
+import moment from 'moment'
+// 3.2 定义全局过滤器
+Vue.filter('dateFormat', function (dataStr, pattern = "YYYY-MM-DD HH:mm:ss") {
+  return moment(dataStr).format(pattern)
+})
+```
+
+**在组件的时间`item.add_time`后面加上管道符`|`并跟上定义的过滤器`dateFormat`**,表示使用`dateFormat`过滤器规则过滤`item.add_time`，这样输出结果就是我们想要的了
+
+```html
+<span>发表时间: {{ item.add_time | dateFormat }}</span>
+```
+
+### 新闻详情
+
+实现新闻列表点击跳转到新闻详情页
+
+#### newsInfo页面
+
+创建`components/news/newsInfo.vue`
+
+#### router-link改造
+
+把列表中的每一项改为`router-link`,同时在跳转的时候应该提供唯一的Id标识符
+
+注意：由于这里需要提供id，所以需要拼接字符串，将`to`当做变量来处理，前面加`:`绑定
+
+改造如下
+
+```html
+<router-link :to="'/home/newsinfo/' + item.id">
+	...
+</router-link>
+```
+
+#### 创建新闻详情组件`newsInfo.vue`
+
+```html
+<template><div><h3>新闻详情</h3></div></template>
+
+
+<script></script>
+
+
+<style lang="scss" scoped></style>
+```
+
+
+
+#### 配置路由规则
+
+在路由模块页面，将新闻详情和组件页面对应
+
+```javascript
+import NewsInfo from './components/news/newsInfo.vue'
+var router = new VueRouter({
+  routes: [ // 配置路由规则
+  	...
+    // 同样，由于需要匹配id，所以要把变量`:id`加到请求地址后面
+  	{ path: '/home/newsinfo/:id', component: NewsInfo }
+  ],
+  ...
+})
+```
+
+#### 绘制`newsInfo.vue`页面
+
+```html
+<template>
+	<div>
+		<div class="newsinfo-container">
+			<h3 class="title">新闻标题</h3>
+			<p>
+				<span>发表时间</span>
+				<span>点击: 0 次</span>
+			</p>
+			<hr>
+			<div class="content"></div>
+		</div>	
+	</div>
+</template>
+```
+
+```scss
+<style lang="scss" scoped>
+	.newsinfo-container {
+		padding: 0 4px;
+		.title {
+			font-size: 16px;
+			text-align: center;
+			margin: 15px 0;
+			color: red;
+		}
+		.subtitle {
+			font-size: 13px;
+			color: #226aff;
+			display: flex;
+			justify-content: space-between;
+		}
+		.content {
+			img {
+		      width: 100%;
+		    }
+		}
+	}
+</style>
+```
+
+#### 新闻详情数据
+
+```javascript
+<script>
+
+	import { Toast } from 'mint-ui'
+
+	export default {
+		data() {
+			return {
+				// 将 URL 地址中传递过来的 id 值挂载到 data上，方便以后调用
+				id: this.$route.params.id,
+				newsinfo: {}
+			}
+		},
+		created() {
+			this.getNewsInfo()
+		},
+		methods: {
+			getNewsInfo() {
+				// 获取新闻详情
+				this.$http.get('api/getnew/' + this.id).then(result => {
+					if (result.body.status === 0) {
+						this.newsinfo = result.body.message[0]
+					} else {
+						Toast('获取新闻详情失败')
+					}
+				})
+			}
+		}
+	}
+</script>
+```
+
+```html
+<template>
+	<div>
+		<div class="newsinfo-container">
+			<h3 class="title">{{ newsinfo.title }}</h3>
+			<p class="subtitle">
+				<span>{{ newsinfo.add_time | dateFormat }}</span>
+				<span>点击: {{ newsinfo.click }} 次</span>
+			</p>
+			<hr>
+			<div class="content" v-html="newsinfo.content"></div>
+		</div>	
+	</div>
+</template>
+```
+
+### 发表评论
+
+#### comment评论子组件
+
+创建`components/subcomments/comment.vue`
+
+```html
+<template>
+	<div>
+		<h3>评论</h3>
+	</div>
+</template>
+
+<script></script>
+
+<style lang="scss" scoped></style>
+```
+
+
+
+#### 将comment评论子组件放入newsInfo组件中
+
+import 手动导入
+
+```js
+import comment from '../subcomments/comment.vue'
+```
+
+在父组件中，使用`components`属性，将刚才导入 `comment`组件，注册为自己的子组件
+
+```javascript
+export default {
+		data() {
+			...
+		},
+		created() {
+			...
+		},
+		methods: {
+			...
+		},
+		// 2、注册评论组件
+		components: {
+			'comment-box': commment
+		}
+	}
+```
+
+#### 页面引用
+
+将注册的子组件的注册名称，以标签形式在页面中引用
+
+```html
+<div class="newsinfo-container">
+	...
+	<!-- 评论子组件区域 -->
+	<comment-box></comment-box>
+</div>
+```
+
+这样就可以在新闻资讯信息详情页面看到这个评论子组件了
+
+#### 获取评论数据
+
+获取所有的评论数据，并实时显示到页面中
+
+```html
+<template>
+  <div class="cmt-container">
+    <h3>发表评论</h3>
+    <hr>
+    <textarea placeholder="请输入评论内容,最多输入120字" maxlength="120"></textarea>
+    <mt-button type="primary" size="large">发表评论</mt-button>
+    <div class="cmt-list">
+      <div class="cmt-item" v-for="(item, i) in comments" :key="item.add_time">
+        <div class="cmt-title">第{{ i+1 }}楼&nbsp;&nbsp;用户: {{ item.uer_name }}&nbsp;&nbsp;发表时间: {{ item.add_time | dateFormat }}</div>
+        <div class="cmt-body">
+          {{ item.content = 'undefined' ? '此用户很懒，什么都没说' : item.content }}
+        </div>
+      </div>
+    </div>
+    <mt-button type="danger" size="large" plain>加载更多</mt-button>
+  </div>
+</template>
+```
 
+```javascript
+<script>
+  import { Toast } from 'mint-ui'
+  export default {
+    data() {
+      return {
+        pageIndex: 1, // 默认展示第一页数据
+        comments: [] // 存储所有的评论数据
+      }
+    },
+    created() {
+      this.getComments()
+    },
+    methods: {
+      getComments() {
+        this.$http.get("api/getcomments/" + this.id + "?pageindex=" + this.pageIndex).then(result => {
+          if (result.body.status === 0) {
+            this.comments = result.body.message
+          } else {
+            Toast('评论数据加载失败')
+          }
+        })
+      }
+    },
+    props: ["id"]
+  }
+</script>
+```
 
+#### 加载更多
 
+- 为加载更多按钮，绑定click事件
+- 当点击时，让 pageIndex++，然后调用一下 this.getComments() 方法获取最新一页的数据
 
+```javascript
+  export default {
+    data() {
+      ...
+    },
+    created() {
+      ...
+    },
+    methods: {
+      getComments() {
+        ...
+      },
+      getMore() {
+        // 加载更多
+        this.pageIndex++
+        this.getComments()
+      }
+    },
+    ...
+  }
+```
 
 
 
+#### 
 
 
 
@@ -494,4 +990,3 @@ export default {
 
 
 
--  `Header` 和 `Tabbar` 之间放入 `<router-view></router-view>` 用来展示路由匹配到的组件
