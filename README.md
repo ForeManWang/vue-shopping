@@ -925,6 +925,1544 @@ export default {
   }
 ```
 
+#### 发表评论
+
+##### 思路
+
+> - 双向数据绑定
+> - 绑定事件（发表评论按钮）
+> - 校验评论区域内容是否为空，如果为空，则提示用户评论内容不能为空，若校验通过，通过 vue-resource 把评论内容提交到服务器
+> - 当发表评论OK后，则重新刷新列表，以查看最新的评论
+> - 如果调用 getComments 重新刷新列表，只能得到当前评论的最后一页，得不到第一页的评论，而我们的需求是要刷新出来第一页的评论，因为发表评论之后应该刷新从第一页开始，这样才能看到最新的评论
+> - 换一种思路：当评论成功后在客户端手动拼接出一个最新的评论对象，然后调用数组的 unshift 把最新的评论追加到 data 中 comments 的最前面，这样就达到需求了
+
+##### 数据绑定
+
+```html
+    <textarea ... v-model="msg"></textarea>
+    <mt-button ... @click="postComment">发表评论</mt-button>
+```
+
+```javascript
+ data() {
+      return {
+        ...
+        msg: '' // 发表评论操作，评论输入的内容，双向数据绑定
+      }
+    },
+```
+
+##### 配置
+
+```javascript
+// 配置全局 post 表单数据格式组织形式   application/x-www-form-urlencoded
+Vue.http.options.emulateJSON = true;
+```
+
+##### 方法
+
+```javascript
+postComment() {
+        // 发表评论
+        if (this.msg.trim().length === 0) {
+          Toast('评论内容不能为空')
+        }
+        // post请求：
+        // 参数一：请求地址 
+        // 参数二：提交给服务器的数据对象 { content: msg } 
+        // 参数三：提交表单中数据的格式 { emulateJSON: true } 由于考虑到post请求在整个项目中有很多，所以把数据格式全局配置 application/x-www-form-urlencoded
+        this.$http
+          .post('api/postcomment/' + this.$route.params.id, {
+            content: this.msg.trim()
+          })
+          .then(function (result) {
+            if (result.body.status === 0) {
+              // 1、拼接出一个评论对象
+              var cmt = { user_name: '匿名用户', add_time: Date.now(), content: this.msg.trim() }
+              this.comments.unshift(cmt)
+              this.msg = ''
+            } else {
+              Toast('获取评论失败')
+            }
+          })
+        }
+```
+
+### 图片分享
+
+点击图片分类，进入对应的图片分享页面
+
+#### photolist 组件
+
+- 新建组件`components\photos\PhotoList.vue`
+
+```html
+<template>
+	<div>
+		<h3>图片分享</h3>
+	</div>
+</template>
+
+<script></script>
+
+<style lang="scss" scoped></style>
+```
+
+#### router-link 改造
+
+```html
+<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+	<router-link to="/home/photolist">
+	    <img src="../../images/menu2.png" alt="">
+	    <div class="mui-media-body">图片分享</div>
+    </router-link>
+</li>
+```
+
+#### 配置路由
+
+```javascript
+// 导入对应的路由组件
+import PhotoList from './components/photos/PhotoList.vue'
+// 配置路由规则
+{ path: '/home/photolist', component: PhotoList }
+```
+
+这样就能点击图片分享，跳转到图片分享页面了
+
+#### 绘制图片列表页面
+
+##### 顶部滑动条静态渲染
+
+- 借助 `MUI` 中的`tab-top-webview-main.html`组件，选取其中的代码, 去掉`.mui-fullscreen`类
+
+```html
+<div id="slider" class="mui-slider">
+	<div id="sliderSegmentedControl" class="mui-scroll-wrapper mui-slider-indicator mui-segmentecontrol mui-segmented-control-inverted">
+		<div class="mui-scroll">
+			<a class="mui-control-item mui-active" href="#item1mobile" data-wid="tab-topsubpage-html">
+				推荐
+			</a>
+			<a class="mui-control-item" href="#item2mobile" data-wid="tab-top-subpage-2.html">
+				热点
+			</a>
+			<a class="mui-control-item" href="#item3mobile" data-wid="tab-top-subpage-3.html">
+				北京
+			</a>
+			<a class="mui-control-item" href="#item4mobile" data-wid="tab-top-subpage-4.html">
+				社会
+			</a>
+			<a class="mui-control-item" href="#item5mobile" data-wid="tab-top-subpage-5.html">
+				娱乐
+			</a>
+		</div>
+	</div>
+</div>
+```
+
+- 此时滑动条是无法进行正常滑动的，可能是由于 js 没写的原因，去查找官方文档，官方明确写到`若需要使用滑动条，要先初始化mui插件`
+- 导入`mui.js`文件
+
+```javascript
+import mui from "../../lib/mui/js/mui.min.js"
+```
+
+- 调用官方初始化插件方法
+
+```javascript
+mui(".mui-scroll-wrapper").scroll({
+   deceleration: 0.0005 //flick 减速系数，系数越大，滚动速度越慢，滚动距离越小，默认值0.0006
+})
+```
+
+- 注意：在初始化滑动条插件的时候，导入了`mui.min.js`，但是控制台报错，错误信息为
+
+```javascript
+Uncaught TypeError: 'caller', 'callee', and 'arguments' properties may not be accessed on strict mode
+```
+
+- 错误信息是，在严格模式下，不能使用`'caller', 'callee', and 'arguments'`这三个属性
+
+- 这个错误可能是`mui.min.js`中可能用到了`'caller', 'callee', and 'arguments'`这三个属性，但是`bundle.js`打包好的js中，默认启用了严格模式，所以冲突了
+
+- 解决方案：
+
+  - `mui.min.js`中不用`'caller', 'callee', and 'arguments'`这三个属性了，但是肯定不现实
+
+  - 修改`webpack`禁用严格模式，移除严格模式[babel-plugin-transform-remove-strict-mode](https://github.com/genify/babel-plugin-transform-remove-strict-mode)
+
+    - 安装
+
+    ```shell
+    npm install babel-plugin-transform-remove-strict-mode -S
+    ```
+
+    - 配置    **.babelrc**
+
+    ```
+    {
+      "plugins": ["transform-remove-strict-mode"]
+    }
+    ```
+
+###### 小bug
+
+- 滑动警告
+
+滑动的时候报警告：`Unable to preventDefault inside passive event listener due to target being treated as passive. See https://www.chromestatus.com/features/5093566007214080`
+
+**原因**
+
+chrome为了提高页面的滑动流畅度而新折腾出来的一个东西： 
+
+http://www.cnblogs.com/pearl07/p/6589114.html
+https://developer.mozilla.org/zh-CN/docs/Web/CSS/touch-action
+
+**解决办法**
+
+可以加上`* { touch-action: none; }` 这句样式。
+
+这也是比较新的样式
+
+- 刚进入页面无法滑动，但刷新页面之后可以滑动
+
+全部都按照官网流程和思路走完了，发现并不能够滑动，刷新了一下页面就能滑动了，而且浏览器控制台和根目录的控制台都没有报错，为什么会这样呢？
+
+**原因**
+
+初始化时机很重要，按照之前的方法，直接在导入`mui.min.js`之后，`export default`之前去执行初始化滑动插件，这时候因为页面还没有初始化，这时候初始化插件没有任何意义，所以刷新一下之后才能有滑动效果，而这个初始化滑动插件的时机需要在当组件中的DOM结构被渲染好并放到页面中后，这时候才能正常使用滑动插件功能，所以放到`export default`中的`mounted()`时机中去初始化插件
+
+```javascript
+	export default {
+		data() {
+			...
+		},
+		created() { ... },
+		mounted() {
+		    // 当 组件中的DOM结构被渲染好并放到页面中后，会执行这个 钩子函数
+		    // 如果要操作元素了，最好在 mounted 里面，因为，这里时候的 DOM 元素 是最新的
+		    // 2. 初始化滑动控件
+		    mui(".mui-scroll-wrapper").scroll({
+		      deceleration: 0.0005 //flick 减速系数，系数越大，滚动速度越慢，滚动距离越小，默认值0.0006
+		    })
+		 },
+		methods: { ... }
+	}
+```
+
+- tab栏无法滑动
+
+当前面的问题全部都解决完了之后，突然发现`tab`栏的组件又给了我一个惊喜，竟然无法正常切换了........
+
+一步一步调试，发现和`mui`有关，但是并不知道什么原因，去引入`tabbar`组件的`App.vue`中把`router-link`标签的类`mui-tab-item`修改了个名字，就好了
+
+##### 顶部滑动条数据渲染
+
+```javascript
+	export default {
+		data() {
+			...
+		},
+		created() {
+			this.getAllCategory()
+		},
+		mounted() {
+		   ...
+		 },
+		methods: {
+			getAllCategory() {
+				// 获取所有图片分类
+				this.$http.get('api/getimgcategory').then(result => {
+					if (result.body.status === 0) {
+						// 根据接口文档要求，手动拼接出最完整的分类列表
+						result.body.message.unshift({ title: '全部', id: 0 })
+						this.categoires = result.body.message
+					} else {
+						Toast('获取图片失败')
+					}
+				})
+			}
+		}
+	}
+```
+
+```html
+		<div id="slider" class="mui-slider">
+			<div id="sliderSegmentedControl" class="mui-scroll-wrapper mui-slider-indicator mui-segmented-control mui-segmented-control-inverted">
+				<div class="mui-scroll">
+					<a :class="['mui-control-item', item.id == 0 ? 'mui-active' : '']" v-for="item in categoires" :key="item.id">
+						{{ item.title }}
+					</a>
+				</div>
+			</div>
+		</div>
+```
+
+当我把这一切写好之后，嗯，数据缺失渲染出来了，但是惊喜的是，`tabar`组件又不能正常使用了，然后我就去找原因，找来找去，什么都没改，刷新了几次网页，自己就好了，我也很无奈啊
+
+**关于图片列表分类高亮**：
+
+此高亮非`tabar`栏组件高亮，此高亮是`mui.scroll`内部封装的高亮效果
+
+##### 底部图片列表
+
+###### 懒加载
+
+[https://mint-ui.github.io/docs/#/zh-cn/lazyload](https://mint-ui.github.io/docs/#/zh-cn/lazyload)
+
+- 使用`mint-ui`提供的组件`Lazyload`
+- 根据`Lazyload`的使用文档使用
+
+官方文档里有一点小错误，需要注意下。。。。。
+
+![1546591084135](C:\Users\wanggongtou\Desktop\vue-shopping\assets\1546591084135.png)
+
+**懒加载效果无法显示**
+
+```javascript
+// 这里由于按需加载Lazyload组件有点小bug
+// 全部导入 mint-ui
+import MintUI from 'mint-ui'
+Vue.use(MintUI)
+import 'mint-ui/lib/style.css'
+```
+
+###### 图片列表页面
+
+```html
+    <!-- 图片列表区域 -->
+    <ul class="photo-list">
+      <li v-for="item in list" :key="item.id">
+        <img v-lazy="item.img_url">
+        <div class="info">
+          <h1 class="info-title">{{ item.title }}</h1>
+          <div class="info-body">{{ item.zhaiyao }}</div>
+        </div>
+      </li>
+    </ul>
+```
+
+```scss
+	.photo_list {
+	    list-style: none;
+	    margin: 0;
+	    padding: 10px;
+	    padding-bottom: 0;
+	    li {
+	        background-color: #ccc;
+	        text-align: center;
+	        margin-bottom: 10px;
+	        box-shadow: 0 0 9px #999;
+	        position: relative;
+	        img {
+	            width: 100%;
+	            vertical-align: middle;
+	        }
+	        img[lazy="loading"] {
+	            width: 40px;
+	            height: 300px;
+	            margin: auto;
+	        }
+	        .info {
+	            color: white;
+	            text-align: left;
+	            position: absolute;
+	            bottom: 0;
+	            background-color: rgba(0, 0, 0, 0.4);
+	            max-height: 84px;
+	            .info_title {
+	                font-size: 14px;
+	            }
+	            .info_body {
+	            	font-size: 13px;
+	            }
+	        }
+	    }
+	}
+```
+
+###### 渲染图片列表数据
+
+```javascript
+	export default {
+		data() {
+			...
+		},
+		created() {
+			...
+			this.getPhotoListByCateId(0)
+		},
+		mounted() {
+		    ...
+		 },
+		methods: {
+			getAllCategory() {
+				...
+			},
+			getPhotoListByCateId(cateId) {
+				// 根据分类id获取图片列表
+				this.$http.get('api/getimages/' + cateId).then(result => {
+					if (result.body.status === 0) {
+						this.list = result.body.message
+					} else {
+						Toast('获取图片失败')
+					}
+				})
+			}
+		}
+	}
+```
+
+### 图片信息
+
+点击单个图片跳转到对应图片信息展示页面
+
+#### router-link改造
+
+```html
+    <!-- 图片列表区域 -->
+    <ul class="photo-list">
+      <router-link v-for="item in list" :key="item.id" :to="'/home/photoinfo/' + item.id" tag="li">
+        <img v-lazy="item.img_url">
+        <div class="info">
+          <h1 class="info-title">{{ item.title }}</h1>
+          <div class="info-body">{{ item.zhaiyao }}</div>
+        </div>
+      </router-link>
+    </ul>
+```
+
+#### PhotoInfo组件
+
+创建`components/photos/PhotoInfo.vue`
+
+```html
+<template>
+	<dir>
+		<h3>图片详情</h3>
+	</dir>
+</template>
+
+<script></script>
+
+<style lang="scss" scoped></style>
+```
+
+#### 配置路由
+
+```javascript
+import PhotoInfo from './components/photos/PhotoInfo.vue'
+{ path: '/home/photoinfo/:id', component: PhotoInfo }
+```
+
+#### 图片详情页面
+
+##### 头部
+
+```html
+<template>
+	<div class="photoinfo-container">
+		<h3>{{ photoinfo.title }}</h3>
+		<p class="subtitle">
+			<span>发表时间: {{ photoinfo.add_time | dateFormat }}</span>
+			<span>点击次数: {{ photoinfo.click }} 次</span>
+		</p>
+		<hr>
+		...
+	</div>
+</template>
+```
+
+```scss
+	.photoinfo-container {
+		padding: 3px;
+		h3 {
+			color: #26a2ff;
+			font-size: 15px;
+			text-align: center;
+			margin: 15px 0;
+		}
+		.subtitle {
+			display: flex;
+			justify-content: between;
+			font-size: 13px;
+		}
+		...
+	}
+```
+
+```javascript
+	export default {
+		data() {
+			return {
+				id: this.$route.params.id, // 从路由中获取到的图片id
+				photoinfo: {} // 图片详情
+			}
+		},
+		created() {
+			this.getPhotoInfo()
+		},
+		methods: {
+			getPhotoInfo() {
+				// 获取图片详情
+				this.$http.get('api/getimageInfo/' + this.id).then(result => {
+					if (result.body.status === 0) {
+						this.photoinfo = result.body.message[0]
+					} else {
+						Toast('获取图片信息失败')
+					}
+				})
+			}
+		}
+	}
+```
+
+##### 缩略图
+
+###### vue-proview
+
+>  一个Vue集成PhotoSwipe图片预览插件
+
+官网[vue-preview](https://github.com/LS1231/vue-preview)
+
+- 安装
+
+```shell
+npm i vue-preview -S
+```
+
+- 导入组件并注册
+
+```javascript
+// 4.1 导入 vue-resource
+import VuePreview from 'vue-preview'
+// 4.2 安装 vue-resource
+Vue.use(VuePreview)
+```
+
+- 渲染数据
+- 注意：
+  - img标签上的class不能去掉
+  - 每个图片数据对象中必须有w和h属性
+
+```javascript
+	export default {
+		data() {
+			...
+		},
+		created() {
+			...
+			this.getThumbs()
+		},
+		methods: {
+			...
+			getThumbs() {
+				// 获取缩略图
+				this.$http.get('api/getthumimages/' + this.id).then(result => {
+					if (result.body.status === 0) {
+						// 循环每个图片数据，补全图片的宽和高  根据官方
+						result.body.message.forEach(item => {
+							item.w = 600
+							item.h = 400
+						})
+						// 把完整的数据保存到 list 中
+						this.list = result.body.message
+					} else {
+						Toast('图片获取失败')
+					}
+				})
+			}
+		},
+		...
+	}
+```
+
+```html
+		<!-- 缩略图区域 -->
+<div class="thumbs">
+	<img class="preview-img" v-for="(item, index) in list" :src="item.src" height="100" @click="$preview.open(index, list)" :key="item.src">
+</div>
+```
+
+##### 内容
+
+```html
+<!-- 内容区域 -->
+<div class="content" v-html="photoinfo.content"></div>
+```
+
+```scss
+	.photoinfo-container {
+		...
+		.content {
+			font-size: 13px;
+			line-height: 30px;
+		}
+	}
+```
+
+```scss
+	.photoinfo-container {
+		...
+		.thumbs{
+		    img{
+		        margin: 10px;
+		        box-shadow: 0 0 8px #999;
+		    }
+		}
+	}
+```
+
+##### 评论子组件
+
+- 导入评论子组件
+
+```javascript
+import comment from '../subcomments/comment.vue'
+```
+
+- 注册评论子组件
+
+```javascript
+	export default {
+		...
+		components: {
+			// 2.注册评论子组件
+			"cmt-box": comment
+		}
+	}
+```
+
+- 引入到页面
+
+```html
+<!-- 3.引入到页面中 -->
+<cmt-box :id="id"></cmt-box>
+```
+
+这样骚骚的评论就可以出来了
+
+### 商品购买
+
+#### router-link改造
+
+```html
+<li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-3">
+	<router-link to="/home/goodslist">
+	      <img src="../../images/menu3.png" alt="">
+	      <div class="mui-media-body">商品购买</div>
+    </router-link>
+</li>
+```
+
+#### GoodList组件
+
+创建`components/goods/GoodsList.vue`
+
+```html
+<template>
+	<div>
+		<h3>商品购买</h3>
+	</div>
+</template>
+
+<script></script>
+
+<style lang="scss" scoped></style>
+```
+
+#### 配置路由
+
+```javascript
+import GoodsList from './components/goods/GoodsList.vue'
+{ path: '/home/goodslist', component: GoodsList }
+```
+
+#### 绘制商品购买页面
+
+##### 静态页面
+
+```html
+<template>
+  <div class="goods-list">
+    
+    <div class="goods-item">
+      <img src="../../images/menu1.png" alt="">
+      <h1 class="title">小米（Mi）小米Note 16G双网通版</h1>
+      <div class="info">
+        <p class="price">
+          <span class="now">￥899</span>
+          <span class="old">￥999</span>
+        </p>
+        <p class="sell">
+          <span>热卖中</span>
+          <span>剩60件</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="goods-item">
+      <img src="../../images/menu1.png" alt="">
+      <h1 class="title">尼康(Nikon)D3300套机（18-55mm f/3.5-5.6G VRII）（黑色）</h1>
+      <div class="info">
+        <p class="price">
+          <span class="now">￥899</span>
+          <span class="old">￥999</span>
+        </p>
+        <p class="sell">
+          <span>热卖中</span>
+          <span>剩60件</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="goods-item">
+      <img src="../../images/menu1.png" alt="">
+      <h1 class="title">小米（Mi）小米Note 16G双网通版</h1>
+      <div class="info">
+        <p class="price">
+          <span class="now">￥899</span>
+          <span class="old">￥999</span>
+        </p>
+        <p class="sell">
+          <span>热卖中</span>
+          <span>剩60件</span>
+        </p>
+      </div>
+    </div>
+
+  </div>
+</template>
+```
+
+```scss
+.goods-list{
+    display: flex;
+    flex-wrap: wrap;
+    padding: 7px;
+    justify-content: space-between;
+  
+    .goods-item{
+        width: 49%;
+        border: 1px solid #ccc;
+        box-shadow: 0 0 8px #ccc;
+        margin: 4px 0;
+        padding: 2px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 293px;
+        img{
+            width: 100%;
+        }
+        .title{
+            font-size: 14px;
+        }
+    
+        .info{
+            background-color: #eee;
+          p{
+              margin: 0;
+              padding: 5px;
+          }
+          .price{
+              .now{
+                  color: red;
+                  font-weight: bold;
+                  font-size: 16px;
+              }
+              .old{
+                  text-decoration: line-through;
+                  font-size: 12px;
+                  margin-left: 10px;
+              }
+          }
+          .sell{
+                display: flex;
+                justify-content: space-between;
+                font-size: 13px;
+          }
+        }
+    }
+}
+```
+
+##### 商品列表数据渲染
+
+```javascript
+export default {
+  data() {
+    // data 是往自己组件内部，挂载一些私有数据的
+    return {
+      pageindex: 1, // 分页的页数
+      goodslist: [] // 存放商品列表的数组
+    };
+  },
+  created() {
+    this.getGoodsList();
+  },
+  methods: {
+    getGoodsList() {
+      // 获取商品列表
+      this.$http
+        .get("api/getgoods?pageindex=" + this.pageindex)
+        .then(result => {
+          if (result.body.status === 0) {
+            // this.goodslist = result.body.message;
+            this.goodslist = this.goodslist.concat(result.body.message);
+          }
+        });
+    },
+    ...
+  }
+};
+```
+
+```html
+ <div class="goods-item" v-for="item in goodslist" :key="item.id" href="">
+      <img :src="item.img_url" alt="">
+      <h1 class="title">{{ item.title }}</h1>
+      <div class="info">
+        <p class="price">
+          <span class="now">￥{{ item.sell_price }}</span>
+          <span class="old">￥{{ item.market_price }}</span>
+        </p>
+        <p class="sell">
+          <span>热卖中</span>
+          <span>剩{{ item.stock_quantity }}件</span>
+        </p>
+      </div>
+    </div>
+```
+
+##### 加载更多
+
+```html
+<mt-button type="danger" size="large" @click="getMore">加载更多</mt-button>
+```
+
+```javascript
+export default {
+  ...
+    getMore() {
+      this.pageindex++ 
+      this.getGoodsList() 
+    },  
+  ...
+};
+```
+
+### 商品详情
+
+点击商品进入对应商品详情页面
+
+##### router-link改造
+
+- 在网页中，有两种跳转方式：
+  - 方式一：使用 a 标签 的形式叫做 标签跳转
+  - 方式二：使用 window.location.href 的形式，叫做 编程式导航
+
+标签跳转：
+
+```html
+    <router-link class="goods-item" v-for="item in goodslist" :key="item.id" :to="'/home/goodsinfo/' + item.id" tag="div">
+      ...
+    </router-link>
+```
+
+编程式导航：使用js的形式进行导航
+
+```html
+    <div class="goods-item" v-for="item in goodslist" :key="item.id" @click="goDetail(item.id)">
+      <img :src="item.img_url" alt="">
+      <h1 class="title">{{ item.title }}</h1>
+      <div class="info">
+        <p class="price">
+          <span class="now">￥{{ item.sell_price }}</span>
+          <span class="old">￥{{ item.market_price }}</span>
+        </p>
+        <p class="sell">
+          <span>热卖中</span>
+          <span>剩{{ item.stock_quantity }}件</span>
+        </p>
+      </div>
+    </div>
+```
+
+编程式导航实例方法：
+
+注意事项：**把 this 打印出来看一看配合官方文档，基本就知道怎么用了，因为我发现官方文档的router没有指明来源，所以打印出来看一看**
+
+```javascript
+export default {
+  ...
+    goDetail(id) {
+      // 使用JS的形式进行路由导航
+      // 注意： 区分 this.$route 和 this.$router 这两个对象
+      // 其中： this.$route 是路由【参数对象】，所有路由中的参数， params, query 都属于它
+      // 其中： this.$router 是一个路由【导航对象】，用它 可以方便的 使用 JS 代码，实现路由的 前进、后退、 跳转到新的 URL 地址
+      // console.log(this) // 重要的是把 this 打印出来看一看，基本就知道怎么用了
+      // 1. 最简单的
+      // this.$router.push("/home/goodsinfo/" + id) 
+      // 2. 传递对象
+      // this.$router.push({ path: "/home/goodsinfo/" + id }) 
+      // 3. 传递命名的路由 此处name和路由规则处的name一致，进行关联，从而实现路由导航
+      this.$router.push({ name: "goodsinfo", params: { id } }) 
+    }
+  }
+};
+```
+
+刚好，把打印出来的`this`的一小部分截图也放在这里
+
+![1546607881361](C:\Users\wanggongtou\Desktop\vue-shopping\assets\1546607881361.png)
+
+其实红框选中的就是官方文档中提到的`router`
+
+这里打开`$router.history`,可以看到这里很多我自己文件的东西，例如这里的的`options`对象是我在组件切换的时候为了组件高亮功能配置的一个选项，这里的`history.current`对象记录了当前的路由`name`和`url`路径
+
+![1546608276006](C:\Users\wanggongtou\Desktop\vue-shopping\assets\1546608276006.png)
+
+##### GoodsInfo组件
+
+新建`components/goods/GoodsList.vue`
+
+```html
+<template>
+	<div>
+		<h1>商品详情</h1>
+	</div>
+</template>
+
+<script></script>
+
+<style lang="scss" scoped></style>
+```
+
+##### 配置路由
+
+标签跳转：配置路由方式
+
+```javascript
+import GoodsInfo from './components/goods/GoodsInfo.vue'
+{ path: '/home/goodsinfo/:id', component: GoodsInfo }
+```
+
+编程式导航：配置路由方式
+
+```javascript
+import GoodsInfo from './components/goods/GoodsInfo.vue'
+{ path: '/home/goodsinfo/:id', component: GoodsInfo, name: 'goodsinfo' }
+```
+
+##### 商品详情页面
+
+######基本页面绘制
+
+- 借助插件`mui-master\examples\hello-mui\examples\.card.html`
+
+```html
+		<!-- 商品轮播图区域 -->
+		<div class="mui-card">
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					这是一个最简单的卡片视图控件；卡片视图常用来显示完整独立的一段信息，比如一篇文章的预览图、作者信、点赞数量等
+				</div>
+			</div>
+		</div>
+		<!-- 商品购买区域 -->
+		<div class="mui-card">
+			<div class="mui-card-header">页眉</div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					包含页眉页脚的卡片，页眉常用来显示面板标题，页脚用来显示额外信息或支持的操作（比如点赞、评论等）
+				</div>
+			</div>
+			<div class="mui-card-footer">页脚</div>
+		</div>
+		<!-- 商品参数区域 -->
+		<div class="mui-card">
+			<div class="mui-card-header">页眉</div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					包含页眉页脚的卡片，页眉常用来显示面板标题，页脚用来显示额外信息或支持的操作（比如点赞、评论等）
+				</div>
+			</div>
+			<div class="mui-card-footer">页脚</div>
+		</div>
+```
+
+```scss
+	.goodsinfo-container {
+		background-color: #eee;
+		overflow: hidden;
+	}
+```
+
+######轮播图区域
+
+这里由于在首页中也用到轮播图了，所以为了不重复性的工作，需要将轮播图抽离为一个单独的子组件，方便调用
+
+1.  新建一个`subcomments/swiper.vue`组件
+
+```html
+<template>
+	<div></div>
+</template>
+
+<script></script>
+
+<style lang="scss" scoped></style>
+```
+
+2. 将首页`HomeContainer.vue`中的轮播图区域剪切过来粘贴到`swiper.vue`合适位置中
+
+```html
+<template>
+	<div>
+		<mt-swipe :auto="1000">
+		  <mt-swipe-item v-for="item in bannerList" :key="item.url">
+		  	<img :src="item.img" alt="">
+		  </mt-swipe-item>
+		</mt-swipe>
+	</div>
+</template>
+
+<script></script>
+
+<style lang="scss" scoped>
+	.mint-swipe {
+		height: 200px;
+		.mint-swipe-item {
+			&:nth-child(1) {
+				background-color: red;
+			}
+			&:nth-child(2) {
+				background-color: yellow;
+			}
+			&:nth-child(3) {
+				background-color: blue;
+			}	
+			img {
+				width: 100%;
+				height: 100%;
+			}
+		}
+	}
+</style>
+```
+
+这样一个轮播图组件就只做好了
+
+**将来谁使用轮播图组件，谁给轮播图传递bannerList，即传递轮播图数据**
+
+```javascript
+...
+<script>
+	export default {
+		props: ["bannerList"]
+	}
+</script>
+...
+```
+
+3. 导入组件
+
+在合适的位置导入组件：
+
+`HomeContainer.vue`
+
+```javascript
+// 1.1 导入子组件
+import swiper from '../subcomments/swiper.vue'
+
+export default {
+	...
+	// 1.2 绑定子组件
+	components: {
+		swiper
+	}
+}
+```
+
+```html
+<template>
+	<div>
+		<!-- 轮播图区域 -->
+		<!-- 1.3 放入页面 -->
+		<swiper :bannerList="bannerList"></swiper>
+		...
+	</div>
+</template>
+```
+
+`GoodsInfo.vue`
+
+```javascript
+// 1.1 导入子组件
+import swiper from '../subcomments/swiper.vue'
+
+export default {
+	...
+	// 1.2 绑定子组件
+	components: {
+		swiper
+	}
+}
+```
+
+```html
+<template>
+	<div class="goodsinfo-container">
+
+		<!-- 商品轮播图区域 -->
+		<div class="mui-card">
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					<!-- 轮播图区域 -->
+					<!-- 1.3 放入页面 -->
+					<swiper :bannerList="banner"></swiper>
+				</div>
+			</div>
+		</div>
+		...
+	</div>
+</template>
+```
+
+###### 小bug
+
+1. 在`GoodsInfo.vue`页面出了个小问题，轮播图并没有显示出来
+
+去查看轮播图组件发现，`:src`拿到的是`item.img`
+
+![1546611127318](C:\Users\wanggongtou\Desktop\vue-shopping\assets\1546611127318.png)
+
+而我们在接口的是这样的数据，只有`item.src`
+
+![1546611149330](C:\Users\wanggongtou\Desktop\vue-shopping\assets\1546611149330.png)
+
+所以对拿到的数据进行处理：
+
+先循环轮播图数组的每一项，为 item 添加 img 属性，因为轮播图组件中只认识 item.img, 不认识 item.src
+
+```javascript
+// 循环给每一项 item.img 做 赋值处理就行
+	export default {
+		...
+		methods: {
+			getBanner() {
+				this.$http.get('api/getthumimages/' + this.id).then(result => {
+					if (result.body.status === 0) {
+						result.body.message.forEach(item => {
+							item.img = item.src
+						})
+						this.banner = result.body.message
+					} else {
+						Toast('获取商品详情失败')
+					}
+				})
+			}
+		},
+		...
+	}
+```
+
+2. 在商品详情页面中，轮播图的图片如果也是用宽高为100%的话，页面不好看
+
+3. 商品详情页面的轮播期望高度是100%，但宽度为自适应，这时候会好看
+
+4. 解决方案：从宽度解决，定义一个属性，让使用轮播图的调用者手动指定是否为100%宽度
+
+   1.  给需要使用轮播图组件的组件的轮播图区域加一个变量`:isfull="true"`便于控制类的样式是否应用，在`HomeContainer.vue`中就可以这样写：
+
+   ```html
+   <template>
+   	<div>
+   		<!-- 轮播图区域 -->
+   		<!-- 1.3 放入页面 -->
+   		<swiper :bannerList="bannerList" :isfull="true"></swiper>
+   		...
+   	</div>
+   </template>
+   ```
+
+   在`GoodsInfo.vue`组件的同样地方加上一个变量`:isfull="false"`便于控制类的样式是否应用
+
+   ```html
+   <template>
+   	<div>
+   		<!-- 轮播图区域 -->
+   		<!-- 1.3 放入页面 -->
+   		<swiper :bannerList="bannerList" :isfull="false"></swiper>
+   		...
+   	</div>
+   </template>
+   ```
+
+   2. 改造`swiper.vue`
+
+   ```html
+   <template>
+   	...
+   		  	<img :src="item.img" alt="" :class="{'full': isfull}">
+   		 ...
+   </template>
+   ```
+
+   ```javascript
+   	export default {
+   		props: ["bannerList", "isfull"]
+   	}
+   ```
+
+   ```scss
+   	.mint-swipe {
+   		...
+   			img {
+   				height: 100%;
+   			}
+   	}
+   	.full {
+   		width: 100%;
+   	}
+   ```
+
+   这样就实现了，子组件根据父组件的需求来决定应用什么样的类样式，但此时还有一个问题，就是当高100%，宽度自适应时，`GoodsInfo.vue`中的轮播图会有大量留空位置
+
+   ![1546613019634](C:\Users\wanggongtou\Desktop\vue-shopping\assets\1546613019634.png)
+
+   **解决方案：**
+
+   由于图片是在`.mint-swipe-item`这个类中，所以直接加个居中对齐，把原来定义的背景色（本来就不需要的）删掉
+
+   ```scss
+   	.mint-swipe {
+   		...
+   		.mint-swipe-item {
+   			text-align: center;
+   			...
+   	}
+   	...
+   ```
+
+**这样两个父组件中的轮播图都好看了**
+
+######商品购买区域
+
+1. 基本页面绘制
+
+```html
+<template>
+	<div class="goodsinfo-container">
+
+		...
+		<!-- 商品购买区域 -->
+		<div class="mui-card">
+			<div class="mui-card-header">商品名称</div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					<p class="price">
+						市场价: <del>￥2399</del>&nbsp;&nbsp;销售价: <span class="now_price">￥2199</span>
+					</p>
+					<p>购买数量: </p>
+					<p>
+						<mt-button type="primary" size="small">立即购买</mt-button>
+						<mt-button type="danger" size="small">加入购物车</mt-button>
+					</p>
+				</div>
+			</div>
+			
+		</div>
+		...
+
+	</div>
+</template>
+```
+
+```scss
+	.goodsinfo-container {
+		...
+		.now_price {
+			color: red;
+			font-size: 16px;
+			font-weight: bold;
+		}
+	}
+```
+
+2. 加减数量插件
+
+`mui-master\examples\hello-mui\examples\numberbox.html` ，由于后面加减数量插件可能不止用一次，于是封装为一个组件`components\subcomments\goodsinfo_numbox.vue`
+
+```html
+<template>
+	<div class="mui-numbox" data-numbox-min='1' data-numbox-max='9'>
+		<button class="mui-btn mui-btn-numbox-minus" type="button">-</button>
+		<input id="test" class="mui-input-numbox" type="number" value="1" />
+		<button class="mui-btn mui-btn-numbox-plus" type="button">+</button>
+	</div>
+</template>
+
+<script></script>
+
+<style lang="scss" scoped></style>
+```
+
+然后去`GoodsInfo.vue`导入、注册、引入页面
+
+```javascript
+	// 2.1 导入数组选择框子组件
+	import number from '../subcomments/goodsinfo_numbox.vue'
+	export default {
+		...
+		components: {
+			...
+			number
+		}
+	}
+```
+
+```html
+<template>
+	<div class="goodsinfo-container">
+
+		...
+		<!-- 商品购买区域 -->
+		<div class="mui-card">
+			...
+					<p>购买数量: <number></number></p>			
+			...
+		</div>
+		...
+	</div>
+</template>
+```
+
+这样就实现了基本页面，然后进行相关的js初始化插件操作，参考mui官方文档，`goodsinfo_numbox.vue`
+
+添加代码
+
+```javascript
+	import mui from '../../lib/mui/js/mui.min.js'
+	export default {
+		mounted() {
+			// 初始化数字选择框组件
+			mui('ui-numbox').numbox()
+		}
+	}
+```
+
+这样就可以正常点击数字组件进行加减操作了
+
+######商品参数区域
+
+**静态页面**
+
+```html
+		<!-- 商品参数区域 -->
+		<div class="mui-card">
+			<div class="mui-card-header">商品参数</div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					<p>商品货号: </p>
+					<p>库存情况: </p>
+					<p>上架时间: </p>
+				</div>
+			</div>
+			<div class="mui-card-footer">
+				<mt-button type="primary" size="large" plain>图文介绍</mt-button>
+				<!-- <br> 此时br不生效，说明父元素启用了br布局，需要在类中去掉 -->
+				<mt-button type="danger" size="large" plain>商品评论</mt-button>
+			</div>
+		</div>
+```
+
+```scss
+	.goodsinfo-container {
+		...
+		.mui-card-footer {
+			display: block;
+			button {
+				margin: 15px 0;
+			}
+		}
+	}
+```
+
+##### 动态数据渲染
+
+```javascript
+	export default {
+		...
+			getGoodsInfo() {
+				// 获取商品信息
+				this.$http.get('api/goods/getinfo/' + this.id).then(result => {
+					if (result.body.status === 0) {
+						this.goodsinfo = result.body.message[0]
+					} else {
+						Toast('获取商品信息失败')
+					}
+				})
+			}
+		},
+		...
+	}
+```
+
+```html
+		<!-- 商品购买区域 -->
+		<div class="mui-card">
+			<div class="mui-card-header">{{ goodsinfo.title }}</div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					<p class="price">
+						市场价: <del>￥{{ goodsinfo.market_price }}</del>&nbsp;&nbsp;销售价: <span class="now_price">￥{{ goodsinfo.sell_price }}</span>
+					</p>
+					<p>购买数量: <number></number></p>
+					<p>
+						<mt-button type="primary" size="small">立即购买</mt-button>
+						<mt-button type="danger" size="small">加入购物车</mt-button>
+					</p>
+				</div>
+			</div>
+		</div>
+		<!-- 商品参数区域 -->
+		<div class="mui-card">
+			<div class="mui-card-header">商品参数</div>
+			<div class="mui-card-content">
+				<div class="mui-card-content-inner">
+					<p>商品货号: {{ goodsinfo.goods_no }}</p>
+					<p>库存情况: {{ goodsinfo.stock_quantity }} 件</p>
+					<p>上架时间: {{ goodsinfo.add_time | dateFormat }}</p>
+				</div>
+			</div>
+			<div class="mui-card-footer">
+				<mt-button type="primary" size="large" plain>图文介绍</mt-button>
+				<!-- <br> 此时br不生效，说明父元素启用了br布局，需要在类中去掉 -->
+				<mt-button type="danger" size="large" plain>商品评论</mt-button>
+			</div>
+		</div>
+```
+
+这样就实现了`GoodsInfo.vue`页面动态数据渲染
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 手机调试
+
+- 手机和电脑在同一局域网中
+
+- 打开自己项目中 `package.json`文件，在`dev`脚本中添加`--host`指令，把当前电脑的`WIFI IP`地址设置为指令的值
+
+- `cmd`终端中运行`ipconfig`查看无线网`IP`地址
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #### 
