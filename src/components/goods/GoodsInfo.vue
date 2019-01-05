@@ -108,6 +108,10 @@
 			},
 			addToShopcar() {
 				this.ballFlag = !this.ballFlag
+				// 当点击加入购物车的时候，将购物车中的数据存储到 car 数组中, 在 car 中存储一些商品的对象, 可以暂时将商品对象设计为 { id: id, count: 购买数量, price: 商品单价, selected: 是否被选中(true or false) }
+				var goodsinfo_vuex = { id: this.id, count: this.selectedCount, price: this.goodsinfo.sell_price, selected: true }
+				// 调用 store 中的 mutations 来加入购物车
+				this.$store.commit('addToCar', goodsinfo_vuex)
 			},
 			beforeEnter(el) {
 				el.style.transform = 'translate(0, 0)'

@@ -25,6 +25,116 @@ import VuePreview from 'vue-preview'
 // 4.2 安装 vue-resource
 Vue.use(VuePreview)
 
+// 5.1 导入 vuex
+import Vuex from 'vuex'
+// 5.2 注册 vuex
+Vue.use(Vuex)
+
+// 6.1 每次刚进入网站，肯定会调用 main.js 在刚调用的时候，先从本地存储中把购物车的数据读出来，放到store中
+var car = JSON.parse(localStorage.getItem('car') || '[]')
+
+// 5.3 创建 vuex 实例对象
+var store = new Vuex.Store({
+	state: {
+		// this.$route.state.***
+		// 6.2 放到store中
+		car: car 
+	},
+	mutations: {
+		// this.$store.commit('方法名称', '按需传入唯一的参数')
+		addToCar(state, goodsinfo) {
+			var flag = false
+			state.car.some(item => {
+				if (item.id == goodsinfo.id) {
+					// 这个 count 是客户端传过来的
+					item.count += parseInt(goodsinfo.count)
+					flag = true
+					return true
+				} 
+			})
+			// 如果最终循环完毕，得到的 flag == false 则 push
+			if (!flag) {
+				state.car.push(goodsinfo)
+			}
+			// 6.3 当更新 car 之后, 把 car 数组存储到本地的 localStorage 中去, 实现持久化存储
+			localStorage.setItem('car', JSON.stringify(state.car))
+		},
+		updateGoodsNum(state, goodsinfo) {
+			// 修改购物车中商品的数量值并同步
+			// 思路：
+			// 1、去购物车组件拿到商品id
+			// 2、现在既有商品id，又有商品的数量了
+			// 3、监听改变事件：每当数量改变则把最新的数量更新到购物车中
+			state.car.some(item => {
+				if (item.id == goodsinfo.id) {
+					item.count = parseInt(goodsinfo.count)
+					return true
+				}
+			})
+			// 当更新 car 之后, 把 car 数组存储到本地的 localStorage 中去, 实现持久化存储
+			localStorage.setItem('car', JSON.stringify(state.car))
+		},
+		removeFormCar(state, id) {
+			// 根据id从store购物车中删除对应的那条商品数据
+			state.car.some((item, i) => {
+				if (item.id == id) {
+					state.car.splice(i, 1)
+					return true
+				}
+			})
+			// 当删除对应id的 商品数据 之后, 把 car 数组存储到本地的 localStorage 中去, 实现持久化存储
+			localStorage.setItem('car', JSON.stringify(state.car))
+		},
+		updateGoodsSelected(state, info) {
+			state.car.some(item => {
+				if (item.id == info.id) {
+					item.selected = info.selected
+				}
+			})
+			// 当把最新的购物车商品选中状态存储到本地的 localStorage 中去, 实现持久化存储
+			localStorage.setItem('car', JSON.stringify(state.car))
+		}
+	},
+	getters: {
+		// this.$store.getters.***
+		getAllCount(state) {
+			var c = 0
+			state.car.forEach(item => {
+				c += item.count
+			})
+			return c
+		},
+		getGoodsCount(state) {
+			var goodscount = {}
+			state.car.forEach(item => {
+				goodscount[item.id] = item.count
+			})
+			return goodscount
+		},
+		getGoodsSelected(state) {
+			var isSelected = {}
+			state.car.forEach(item => {
+				isSelected[item.id] = item.selected
+			})
+			return isSelected
+		},
+		getGoodsCountAndAmount(state) {
+			// 获取已选数量和计算已选商品总价
+			var countAndAmount = {
+				count: 0, // 勾选数量
+				amount: 0 // 总价
+			}
+			state.car.forEach(item => {
+				if (item.selected) {
+					countAndAmount.count += item.count
+					countAndAmount.amount += item.count * item.price
+				}
+			})
+			return countAndAmount
+		}	
+	}
+})
+
 // 配置全局根路径
 Vue.http.options.root = 'http://www.liulongbin.top:3005'
 // 配置全局 post 表单数据格式组织形式   application/x-www-form-urlencoded
@@ -60,5 +170,7 @@ var vm = new Vue({
 	el: '#app',
 	render: c => c(app),
 	// 1.4 挂载路由对象到 vm 实例上
-	router
+	router,
+	// 5.4 挂载 vuex 实例对象到 vm 实例上
+	store
 })
