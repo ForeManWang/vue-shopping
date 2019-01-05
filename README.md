@@ -2347,23 +2347,382 @@ export default {
 
 这样就实现了`GoodsInfo.vue`页面动态数据渲染
 
+### 图文介绍
 
+点击图文介绍进入图文介绍页面
 
+#### 编程式跳转——图文介绍
 
+- 在`goods`文件夹下创建`GoodsDesc.vue`
 
+```html
+<template>
+	<div>
+		<h3>图文介绍</h3>
+	</div>
+</template>
 
+<script></script>
 
+<style lang="scss" scoped></style>
+```
 
+- 给图文介绍按钮添加点击事件
 
+```html
+<mt-button type="primary" size="large" plain @click="goDesc(id)">图文介绍</mt-button>
+```
 
+- 在导出的`methods`对象中加入方法`goDesc`
 
+```javascript
+goDesc(id) {
+	// 点击使用编程式导航进入图文介绍页面
+	this.$router.push({ name: "goodsdesc", params: { id } }) 
+},
+```
 
+- 配置路由
 
+```javascript
+import GoodsDesc from './components/goods/GoodsDesc.vue'
+{ path: '/home/goodsdesc/:id', component: GoodsDesc, name: 'goodsdesc' },
+```
 
+####静态页面
 
+```html
+<template>
+	<div class="goodsdesc-container">
+		<h3>图文介绍</h3>
+	</div>
+    <div class="content">内容区域</div>
+</template>
 
+<script></script>
 
+<style lang="scss" scoped></style>
+```
 
+```scss
+.goodsdesc-container {
+  padding: 4px;
+  h3 {
+    font-size: 16px;
+    color: #226aff;
+    text-align: center;
+    margin: 15px 0;
+  }
+  .content{
+    img{
+      width: 100%;
+    }
+  }
+}
+```
+
+####数据渲染
+
+```html
+<template>
+  <div class="goodsdesc-container">
+    <h3>{{ info.title }}</h3>
+
+    <hr>
+
+    <div class="content" v-html="info.content"></div>
+  </div>
+</template>
+```
+
+```javascript
+<script>
+
+	import { Toast } from 'mint-ui'
+
+	export default {
+		data() {
+			return {
+				id: this.$route.params.id,
+				info: {}
+			}
+		},
+		created() {
+			this.getGoodsDesc()
+		},
+		methods: {
+			getGoodsDesc() {
+				this.$http.get('api/goods/getdesc/' + this.id).then(result => {
+					if (result.body.status === 0) {
+						this.info = result.body.message[0]
+					} else {
+						Toast('获取图文详情失败')
+					}
+				})
+			}
+		},
+	}
+</script>
+```
+
+### 商品评论
+
+点击商品评论进入商品评论页面
+
+####编程式跳转——图文介绍
+
+- 在`goods`文件夹下创建`GoodsComment.vue`
+
+```html
+<template>
+	<div>
+		<h3>图文介绍</h3>
+	</div>
+</template>
+
+<script></script>
+
+<style lang="scss" scoped></style>
+```
+
+- 给图文介绍按钮添加点击事件
+
+```html
+<mt-button type="danger" size="large" plain @click="goComment(id)">商品评论</mt-button>
+```
+
+- 在导出的`methods`对象中加入方法`goDesc`
+
+```javascript
+goComment(id) {
+	// 点击使用编程式导航进入商品评论页面
+	this.$router.push({ name: "goodscomment", params: { id } }) 
+},
+```
+
+- 配置路由
+
+```javascript
+import GoodsComment from './components/goods/GoodsComment.vue'
+{ path: '/home/goodscomment/:id', component: GoodsComment, name: 'goodscomment' }
+```
+
+####引入评论子组件
+
+- 导入评论子组件
+
+```javascript
+import cmtbox from '../subcomments/comment.vue'
+```
+
+- 绑定评论子组件
+
+```javascript
+export default {
+	components: {
+		cmtbox
+	}
+}
+```
+
+- 引入到页面 
+- 注意：这里要根据id去加载评论，所以要绑定id
+
+```html
+<cmtbox :id="this.$route.params.id"></cmtbox>
+```
+
+### 购物车动画
+
+####商品详情页面购物车动画
+
+在制作商品详情的时候，还有一个点击加入购物车按钮，有个小球掉入购物车，同时购物车数量同步等业务没有去做，这里要完成
+
+###### 控制小球显示与隐藏
+
+- 在data中加入`ballFlag`标识符，用来控制小球的显示和隐藏
+- 定义一个切换ballFlag属性的函数，控制ballFlag为true还是false
+- 为加入购物车按钮添加点击事件
+
+```javascript
+data() {
+			return {
+				...
+				ballFlag: false // 控制小球显示和隐藏标识，默认隐藏
+			}
+		},
+methods: {
+    		...
+            addToShopcar() {
+				this.ballFlag = !this.ballFlag
+			} , 
+    		...
+          }
+```
+
+###### 控制小球位移位置(半场动画)
+
+- 为小球的div包裹transition元素
+- 为该transition绑定三个半场动画事件
+- 编写半场动画事件
+
+```html
+		<!-- 小球 -->
+		<transition
+			@before-enter="beforeEnter"
+			@enter="enter"
+			@after-enter="afterEnter">
+			<div class="ball" v-show="ballFlag"></div>
+		</transition>
+```
+
+```javascript
+methods: {
+    ...
+			beforeEnter(el) {
+				el.style.transform = 'translate(0, 0)'
+			},
+			enter(el, done) {
+				// 加一个 el.offsetWidth ,不然下面代码不生效 
+				el.offsetWidth
+				el.style.transform = 'translate(93px, 230px)'
+				el.style.transition = 'all 1s cubic-bezier(.4,-0.3,1,.68)'
+				done()
+			},
+			afterEnter(el) {
+				this.ballFlag = !this.ballFlag
+			}
+    ...
+}
+```
+
+**小bug修复**
+
+**小球动画优化思路：**
+1、分析导致动画不准确的原因，我们把小球最终的位置已经固定了，所以只要测试的时候滚动了距离或者不同分辨率，问题就显示出来了
+2、 所以位移的距离不能固定，应该让他跟着滚轮的滚动或者分辨率的变化而变化
+
+3、不管滚动条如何变化或者分辨率如何变化，最终位移的距离都是购物车数字位置的坐标减去小球初始位置的横纵坐标
+
+4、看到github中原项目使用了`getBoundingClientRect()`去获取元素的位置，于是我给`ball`的div加了一个id选择器`ballflag`,在控制台打印出了这个div的结构，发现原型对象中是有这样一个方法的
+
+![1546659734088](C:\Users\wanggongtou\Desktop\vue-shopping\assets\1546659734088.png)
+
+5、接着我打印了`$('#ballflag').getBoundingClientRect()`的结构
+
+![1546660121543](C:\Users\wanggongtou\Desktop\vue-shopping\assets\1546660121543.png)
+
+6、可以看到这个结果是一个对象，所以位置可以通过`dom.left`和`dom.top`拿到
+
+```javascript
+// 将 enter 方法改造
+			enter(el, done) {
+				// 加一个 el.offsetWidth ,不然下面代码不生效 
+				el.offsetWidth
+				// 获取小球在页面中的位置
+				const ballPosition = this.$refs.ball.getBoundingClientRect()
+				// 获取购物车右上角数量标识在页面中的位置
+                // 这里获取id之前，需要在App.vue对应位置，添加上该id="badge"的属性
+				const badgePosition = 		document.getElementById('badge').getBoundingClientRect()
+				// 求出位移
+				var transX = badgePosition.left - ballPosition.left
+				var transY = badgePosition.top - ballPosition.top
+
+				el.style.transform = `translate(${transX}px, ${transY}px)`
+				el.style.transition = 'all 1s cubic-bezier(.4,-0.3,1,.68)'
+				done()
+			}
+```
+
+#### 购物车数量标识
+
+购物车数量标识同步变化，每当numbox的值发生变化，立即把购买数量传递给父组件
+
+思路：
+
+1、按钮属于goodsinfo组件，数字属于goodsinfo_numbox组件，所以涉及嵌套，无法直接在goodsinfo页面中直接获取选中的数量值
+
+2、涉及到子组件向父组件传值（事件调用机制）
+
+3、事件调用的本质：父向子传递方法，子调用这个方法，同时把数据当做参数传递给这个方法
+
+4、父组件定义接收方法
+
+```javascript
+data() {
+			return {
+				...
+				selectedCount: 1 // 保存用户选中的商品数量，默认为 1
+			}
+		},
+methods: {
+    ...
+    getSelectedCount() {
+				// 当子组件把选中的数据传递给父组件的对象时，保留到data上
+				// 并添加属性  @getcount="getSelectedCount" 这时候已经把方法传递给子组件了，这时候去子组件进行事件调用
+				this.selectedCount = count
+			},
+    ...
+}
+```
+
+```html
+<p>购买数量: <number @getcount="getSelectedCount"></number></p>
+```
+
+5、子组件绑定监听事件，每当文本框最新的数据被修改时，通过事件调用传递给父组件
+
+```javascript
+...  
+methods: {
+    countChanged() {
+      // 每当 文本框的数据被修改的时候，立即把 最新的数据，通过事件调用，传递给父组件
+      // console.log(this.$refs.number.value);
+      this.$emit("getcount", parseInt(this.$refs.number.value))
+    }
+  },
+      ....
+```
+
+```html
+<input id="test" class="mui-input-numbox" type="number" value="1" @change="countChanged" ref="number" />
+```
+
+#### 设置最大值
+
+设置最大值为库存，涉及到父向子传值
+
+- 父组件中绑定`:max`
+
+```html
+<p>购买数量: <number @getcount="getSelectedCount" :max="goodsinfo.market_quantity"></number></p>
+```
+
+- 子组件中用`props`接收
+
+```javascript
+props: ["max"],
+```
+
+这样测试了一下，依然能添加商品超过库存，打印出来这个`max`，发现是`undefined`，然后去去找`max`的来源，max来源于`父组件的max`，`父组件的max`来源于`goodsinfo.market_quantity`，然后去看到`goodsinfo`的来源，是来源自`methods`中一个`Promise`异步操作的方法，所以当渲染页面的时候，很可能还没有从服务器拿到`goodsinfo.market_quantity`, 所以是`undefined`
+
+解决方案：
+
+什么时候能拿到很关键。
+
+所以去监听这个`max`, 通过`JSAPI`去操作最大值，不管`watch`会被触发几次，但是最后一次肯定是一个合法的`max`的`number`值
+
+```javascript
+...  
+watch: {
+    max: function(newVal, oldVal) {
+      mui(".mui-numbox")
+        .numbox()
+        .setOption("max", newVal)
+    }
+  }
+...
+```
 
 ## 手机调试
 

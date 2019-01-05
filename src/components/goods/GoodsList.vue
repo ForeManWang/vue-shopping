@@ -52,7 +52,8 @@ export default {
       this.getGoodsList() 
     },
     goDetail(id) {
-      console.log(this) 
+      // 点击使用编程式导航进入商品详情页面
+      // console.log(this) 
       this.$router.push({ name: "goodsinfo", params: { id } }) 
     }
   }

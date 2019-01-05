@@ -1,6 +1,12 @@
 <template>
 	<div class="goodsinfo-container">
-
+		<!-- 小球 -->
+		<transition
+			@before-enter="beforeEnter"
+			@enter="enter"
+			@after-enter="afterEnter">
+			<div class="ball" v-show="ballFlag" ref="ball" id="ballflag"></div>
+		</transition>
 		<!-- 商品轮播图区域 -->
 		<div class="mui-card">
 			<div class="mui-card-content">
@@ -19,10 +25,10 @@
 					<p class="price">
 						市场价: <del>￥{{ goodsinfo.market_price }}</del>&nbsp;&nbsp;销售价: <span class="now_price">￥{{ goodsinfo.sell_price }}</span>
 					</p>
-					<p>购买数量: <number></number></p>
+					<p>购买数量: <number @getcount="getSelectedCount" :max="goodsinfo.market_quantity"></number></p>
 					<p>
 						<mt-button type="primary" size="small">立即购买</mt-button>
-						<mt-button type="danger" size="small">加入购物车</mt-button>
+						<mt-button type="danger" size="small" @click="addToShopcar">加入购物车</mt-button>
 					</p>
 				</div>
 			</div>
@@ -38,9 +44,9 @@
 				</div>
 			</div>
 			<div class="mui-card-footer">
-				<mt-button type="primary" size="large" plain>图文介绍</mt-button>
+				<mt-button type="primary" size="large" plain @click="goDesc(id)">图文介绍</mt-button>
 				<!-- <br> 此时br不生效，说明父元素启用了br布局，需要在类中去掉 -->
-				<mt-button type="danger" size="large" plain>商品评论</mt-button>
+				<mt-button type="danger" size="large" plain @click="goComment(id)">商品评论</mt-button>
 			</div>
 		</div>
 
@@ -60,7 +66,9 @@
 			return {
 				id: this.$route.params.id, // 将路由参数中的id挂在到data上，方便后期调用
 				banner: [],  // 轮播图的数据
-				goodsinfo: {} // 获取到的商品信息
+				goodsinfo: {}, // 获取到的商品信息
+				ballFlag: false, // 控制小球显示和隐藏标识，默认隐藏
+				selectedCount: 1 // 保存用户选中的商品数量，默认为 1
 			}
 		},
 		created() {
@@ -89,6 +97,44 @@
 						Toast('获取商品信息失败')
 					}
 				})
+			},
+			goDesc(id) {
+				// 点击使用编程式导航进入图文介绍页面
+				this.$router.push({ name: "goodsdesc", params: { id } }) 
+			},
+			goComment(id) {
+				// 点击使用编程式导航进入商品评论页面
+				this.$router.push({ name: "goodscomment", params: { id } }) 
+			},
+			addToShopcar() {
+				this.ballFlag = !this.ballFlag
+			},
+			beforeEnter(el) {
+				el.style.transform = 'translate(0, 0)'
+			},
+			enter(el, done) {
+				// 加一个 el.offsetWidth ,不然下面代码不生效 
+				el.offsetWidth
+				// 获取小球在页面中的位置
+				const ballPosition = this.$refs.ball.getBoundingClientRect()
+				// 获取购物车右上角数量标识在页面中的位置
+				const badgePosition = document.getElementById('badge').getBoundingClientRect()
+				// 求出位移
+				var transX = badgePosition.left - ballPosition.left
+				var transY = badgePosition.top - ballPosition.top
+
+				el.style.transform = `translate(${transX}px, ${transY}px)`
+				el.style.transition = 'all 0.6s cubic-bezier(.4,-0.3,1,.68)'
+				done()
+			},
+			afterEnter(el) {
+				this.ballFlag = !this.ballFlag
+			},
+			getSelectedCount(count) {
+				// 当子组件把选中的数据传递给父组件的对象时，保留到data上
+				// 并添加属性  @getcount="getSelectedCount" 这时候已经把方法传递给子组件了，这时候去子组件进行传值
+				this.selectedCount = count
+				console.log("父组件拿到的数量值为： " + this.selectedCount)
 			}
 		},
 		components: {
@@ -112,6 +158,16 @@
 			button {
 				margin: 15px 0;
 			}
+		}
+		.ball {
+			width: 15px;
+			height: 15px;
+			border-radius: 50%;
+			background-color: red;
+			position: absolute;
+			top: 390px;
+			left: 144px;
+			z-index: 88;
 		}
 	}
 </style>
