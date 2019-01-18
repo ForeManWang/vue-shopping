@@ -30,7 +30,7 @@ npm run dev
 
 ### 公共部分
 
-<img src="/assets/shopcomment.png" alt="shopcomment">
+<img src="/assets/shopcomment.png" alt="shopcomment" style="width:100">
 
 ### 首页
 
