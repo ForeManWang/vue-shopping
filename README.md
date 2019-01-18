@@ -54,7 +54,7 @@ npm run dev
 
 <img src="/assets/photolist2.png" alt="photolist2">
 
-![photoinfo](/assets/photoinfo.png)
+![photoinfo](assets/photoinfo.png)
 
 ### 商品购买
 
