@@ -54,7 +54,7 @@ npm run dev
 
 <img src="/assets/photolist2.png" alt="photolist2">
 
-<img src="/assets/photoinfo.png" alt="photoinfo">
+![photoinfo](/assets/photoinfo.png)
 
 ### 商品购买
 
@@ -66,7 +66,7 @@ npm run dev
 
 <img src="/assets/shop.png" alt="shop">
 
-<img src="/assets/shopinfo.png" alt="shopinfo">
+![shopinfo](/assets/shopinfo.png)
 
 <img src="/assets/shopcount.png" alt="shopcount">
 
