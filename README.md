@@ -30,7 +30,7 @@ npm run dev
 
 ### 公共部分
 
-<img src="/assets/shopcomment.png" alt="shopcomment" style="width:100">
+<img src="/assets/shopcomment.png" alt="shopcomment" style="width:100px; display:inline;">
 
 ### 首页
 
@@ -40,19 +40,19 @@ npm run dev
 
 **新闻列表 + 新闻详情 + 新闻详情页发表评论和加载更多功能**
 
-<img src="/assets/newslist.png" alt="newslist">
+<img src="/assets/newslist.png" alt="newslist" style="width:100px; display:inline;">
 
-<img src="/assets/newsinfo.png" alt="newsinfo">
+<img src="/assets/newsinfo.png" alt="newsinfo" style="width:100px; display:inline;">
 
-<img src="/assets/newsCommentMore.png" alt="newsCommentMore">
+<img src="/assets/newsCommentMore.png" alt="newsCommentMore" style="width:100px; display:inline;">
 
 ### 图片分享
 
 **图片列表 + 图片详情 + 图片评论 + 加载更多**
 
-<img src="/assets/photolist1.png" alt="photolist1">
+<img src="/assets/photolist1.png" alt="photolist1" style="width:100px; display:inline;">
 
-<img src="/assets/photolist2.png" alt="photolist2">
+<img src="/assets/photolist2.png" alt="photolist2" style="width:100px; display:inline;">
 
 ![photoinfo](assets/photoinfo.png)
 
@@ -60,13 +60,13 @@ npm run dev
 
 **商品列表 + 商品详情 + 商品详情页轮播图 、加入购物车、图文介绍、商品评论、商品结算等**
 
-<img src="/assets/shoplist.png" alt="shoplist">
+<img src="/assets/shoplist.png" alt="shoplist" style="width:100px; display:inline;">
 
-<img src="/assets/shopdetail.png" alt="shopdetail">
+<img src="/assets/shopdetail.png" alt="shopdetail" style="width:100px; display:inline;">
 
-<img src="/assets/shop.png" alt="shop">
+<img src="/assets/shop.png" alt="shop" style="width:100px; display:inline;">
 
-![shopinfo](/assets/shopinfo.png)
+<img src="/assets/shopinfo.png" alt="shopinfo" style="width:100px; display:inline;">
 
-<img src="/assets/shopcount.png" alt="shopcount">
+<img src="/assets/shopcount.png" alt="shopcount" style="width:100px; display:inline;">
 
