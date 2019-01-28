@@ -28,9 +28,15 @@ npm run dev
 
 ##项目部分功能和相关截图
 
+> 我这里用的 iphone5 模拟，移动端布局，每个手机都有其对应的，亲测正常
+
 ### 公共部分
 
-<img src="/assets/shopcomment.png" alt="shopcomment" style="width:100px; display:inline;">
+**评论部分作为公共组件以及加载更多评论**
+
+<img src= "/assets/comment.png" alt="comment">
+
+<img src="assets/more.png" alt = "more">
 
 ### 首页
 
@@ -38,35 +44,51 @@ npm run dev
 
 ### 新闻资讯
 
-**新闻列表 + 新闻详情 + 新闻详情页发表评论和加载更多功能**
+**新闻列表 + 新闻详情 + 新闻详情页发表评论**
 
-<img src="/assets/newslist.png" alt="newslist" style="width:100px; display:inline;">
+<img src= "/assets/newslist.png" alt="newslist">
 
-<img src="/assets/newsinfo.png" alt="newsinfo" style="width:100px; display:inline;">
-
-<img src="/assets/newsCommentMore.png" alt="newsCommentMore" style="width:100px; display:inline;">
+<img src= "/assets/newsinfo.png" alt="newsinfo">
 
 ### 图片分享
 
 **图片列表 + 图片详情 + 图片评论 + 加载更多**
 
-<img src="/assets/photolist1.png" alt="photolist1" style="width:100px; display:inline;">
+<img src="/assets/photolist1.png" alt="photolist1">
 
-<img src="/assets/photolist2.png" alt="photolist2" style="width:100px; display:inline;">
+滑动上方导航条
 
-![photoinfo](assets/photoinfo.png)
+<img src="/assets/photolist2.png" alt="photolist2">
+
+<img src= "/assets/photoinfo.png" alt="photoinfo">
 
 ### 商品购买
 
 **商品列表 + 商品详情 + 商品详情页轮播图 、加入购物车、图文介绍、商品评论、商品结算等**
 
-<img src="/assets/shoplist.png" alt="shoplist" style="width:100px; display:inline;">
+<img src= "/assets/shoplist1.png" alt="shoplist1">
 
-<img src="/assets/shopdetail.png" alt="shopdetail" style="width:100px; display:inline;">
+<img src= "/assets/shoplist2.png" alt="shoplist2">
 
-<img src="/assets/shop.png" alt="shop" style="width:100px; display:inline;">
+<img src="/assets/shopdetail1.png" alt="shopdetail1">
 
-<img src="/assets/shopinfo.png" alt="shopinfo" style="width:100px; display:inline;">
+<img src="/assets/shopdetail2.png" alt="shopdetail2">
 
-<img src="/assets/shopcount.png" alt="shopcount" style="width:100px; display:inline;">
+
+
+**图文介绍**：
+
+<img src="/assets/phoneinfo1.png" alt="phoneinfo1">
+
+<img src="/assets/phoneinfo2.png" alt="phoneinfo2">
+
+<img src="/assets/phoneinfo3.png" alt="phoneinfo3">
+
+<img src="/assets/phoneinfo4.png" alt="phoneinfo4">
+
+**商品评论用的公共组件**
+
+**商品结算**：
+
+<img src="/assets/shopcount.png" alt="shopcount">
 
