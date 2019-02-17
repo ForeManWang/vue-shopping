@@ -2,7 +2,6 @@
 
 小商城项目，部分功能
 
-## [主流开源协议之间有何异同？](https://www.zhihu.com/question/19568896)
 ## 上传至github项目仓库
 ```shell
 git add .
